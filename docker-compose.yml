@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql-db:
+    image: mysql:8.0
+    container_name: civic-mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: civic_system
+      TZ: 'UTC'
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - civic-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+    restart: unless-stopped
+
+  # Backend Service
+  backend:
+    build:
+      context: ./civic-governance-fixed\ Backend/civic-governance
+      dockerfile: Dockerfile
+    container_name: civic-backend
+    environment:
+      DB_URL: jdbc:mysql://mysql-db:3306/civic_system?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_POOL_SIZE: 10
+      DB_MIN_IDLE: 5
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: 86400000
+      SERVER_PORT: 8080
+      LOG_LEVEL: INFO
+      JPA_DDL_AUTO: update
+      JPA_SHOW_SQL: false
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - civic-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 20s
+
+  # Frontend Service (Optional - for development)
+  frontend:
+    image: node:18-alpine
+    container_name: civic-frontend
+    working_dir: /app
+    environment:
+      VITE_API_BASE_URL: http://backend:8080
+    volumes:
+      - ./civic-governance-fixed\ Frontend/fixed-frontend:/app
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - civic-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  civic-network:
+    driver: bridge
