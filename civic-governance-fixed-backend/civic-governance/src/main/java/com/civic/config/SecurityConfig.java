@@ -88,11 +88,8 @@ public class SecurityConfig {
 
         // ALLOW FRONTEND (LOCAL + EC2)
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:3000",
-                "http://13.201.135.127:5173"
-        ));
-
+    "http://13.201.135.127"
+));
         config.setAllowedMethods(List.of(
                 "GET",
                 "POST",
