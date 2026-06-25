@@ -36,38 +36,42 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-            // ❌ Disable CSRF for REST APIs (required for JWT + React)
+            // Disable CSRF for REST APIs
             .csrf(csrf -> csrf.disable())
 
-            // 🌐 Enable CORS
+            // Enable CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-            // 🔐 Authorization rules
+            // Authorization rules
             .authorizeHttpRequests(auth -> auth
 
-                // ✅ Actuator (SAFE for Spring Boot 3)
-                .requestMatchers("/actuator/**").permitAll()
+                // Public endpoints (IMPORTANT FIX HERE)
+                .requestMatchers(
+                        "/api/auth/**",
+                        "/auth/**",
+                        "/register",
+                        "/login",
+                        "/api/public/**",
+                        "/actuator/**"
+                ).permitAll()
 
-                // ✅ Public APIs
-                .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
-
-                // 🔐 Role-based APIs
+                // Role-based endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/officer/**").hasAnyRole("OFFICER", "ADMIN")
 
-                // ❗ Everything else secured
+                // Everything else secured
                 .anyRequest().authenticated()
             )
 
-            // 🚫 Stateless session (JWT required)
+            // Stateless session for JWT
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // 🔐 Authentication provider
+            // Authentication provider
             .authenticationProvider(authenticationProvider())
 
-            // 🔑 JWT filter before Spring Security filter
+            // JWT filter
             .addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
@@ -76,15 +80,17 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🌐 CORS CONFIG (React + Docker safe)
+    // ===================== CORS CONFIG =====================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration config = new CorsConfiguration();
 
+        // ALLOW FRONTEND (LOCAL + EC2)
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "http://13.201.135.127:5173"
         ));
 
         config.setAllowedMethods(List.of(
@@ -107,7 +113,7 @@ public class SecurityConfig {
         return source;
     }
 
-    // 🔐 Authentication provider (DB login)
+    // ===================== AUTH PROVIDER =====================
     @Bean
     public AuthenticationProvider authenticationProvider() {
 
@@ -120,13 +126,13 @@ public class SecurityConfig {
         return provider;
     }
 
-    // 🔒 Password encoder
+    // ===================== PASSWORD ENCODER =====================
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 🔑 Authentication manager
+    // ===================== AUTH MANAGER =====================
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config) throws Exception {
