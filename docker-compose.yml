@@ -20,7 +20,7 @@ services:
     networks:
       - civic-network
 
-  backend:
+backend:
     build:
       context: ./civic-governance-fixed-backend/civic-governance
       dockerfile: Dockerfile
