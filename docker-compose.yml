@@ -43,7 +43,7 @@ services:
     working_dir: /app
     restart: unless-stopped
     environment:
-      VITE_API_BASE_URL: http://65.0.134.215:8080
+      VITE_API_BASE_URL: http://13.127.107.63:8080
     volumes:
       - ./civic-governance-fixed-frontend/fixed-frontend:/app
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
