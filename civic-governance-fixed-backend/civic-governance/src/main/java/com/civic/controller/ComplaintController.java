@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/complaints")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class ComplaintController {
     
     @Autowired
@@ -72,7 +71,7 @@ public class ComplaintController {
     }
     
     @GetMapping("/statistics")
-    public ResponseEntity<Map<String, Long>> getStatistics() {
+    public ResponseEntity<Map<String, Object>> getStatistics() {
         return ResponseEntity.ok(complaintService.getComplaintStatistics());
     }
 }

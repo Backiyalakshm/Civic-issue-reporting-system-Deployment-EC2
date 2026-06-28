@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class PublicController {
     
     @Autowired
@@ -30,7 +29,7 @@ public class PublicController {
     public ResponseEntity<Map<String, Object>> getPublicDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
-        Map<String, Long> stats = complaintService.getComplaintStatistics();
+        Map<String, Object> stats = complaintService.getComplaintStatistics();
         dashboard.put("statistics", stats);
         
         // Category distribution
@@ -42,8 +41,8 @@ public class PublicController {
         dashboard.put("categoryDistribution", categoryDistribution);
         
         // Resolution percentage
-        long total = stats.get("total");
-        long resolved = stats.get("resolved");
+        long total = ((Number) stats.get("total")).longValue();
+long resolved = ((Number) stats.get("resolved")).longValue();
         double resolutionPercentage = total > 0 ? (resolved * 100.0 / total) : 0;
         dashboard.put("resolutionPercentage", resolutionPercentage);
         

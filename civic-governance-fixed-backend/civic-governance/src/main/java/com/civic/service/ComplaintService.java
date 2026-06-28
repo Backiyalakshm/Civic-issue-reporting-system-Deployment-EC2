@@ -108,21 +108,24 @@ public class ComplaintService {
                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
     }
     
-    public Map<String, Long> getComplaintStatistics() {
-        Long total = complaintRepository.count();
-        Long submitted = complaintRepository.countByStatus(Complaint.Status.SUBMITTED);
-        Long assigned = complaintRepository.countByStatus(Complaint.Status.ASSIGNED);
-        Long inProgress = complaintRepository.countByStatus(Complaint.Status.IN_PROGRESS);
-        Long resolved = complaintRepository.countByStatus(Complaint.Status.RESOLVED);
-        Long escalated = complaintRepository.countByStatus(Complaint.Status.ESCALATED);
-        
-        return Map.of(
-            "total", total,
-            "submitted", submitted,
-            "assigned", assigned,
-            "inProgress", inProgress,
-            "resolved", resolved,
-            "escalated", escalated
-        );
-    }
+public Map<String, Object> getComplaintStatistics() {
+
+    Long total = complaintRepository.count();
+    Long submitted = complaintRepository.countByStatus(Complaint.Status.SUBMITTED);
+    Long assigned = complaintRepository.countByStatus(Complaint.Status.ASSIGNED);
+    Long inProgress = complaintRepository.countByStatus(Complaint.Status.IN_PROGRESS);
+    Long resolved = complaintRepository.countByStatus(Complaint.Status.RESOLVED);
+    Long escalated = complaintRepository.countByStatus(Complaint.Status.ESCALATED);
+
+    Map<String, Long> stats = Map.of(
+        "total", total,
+        "submitted", submitted,
+        "assigned", assigned,
+        "inProgress", inProgress,
+        "resolved", resolved,
+        "escalated", escalated
+    );
+
+    return Map.of("statistics", stats);
+}
 }

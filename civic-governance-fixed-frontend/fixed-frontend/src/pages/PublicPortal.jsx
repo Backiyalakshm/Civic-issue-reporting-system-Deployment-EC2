@@ -28,7 +28,18 @@ const PublicPortal = () => {
     return <div className="p-8 text-center">Loading...</div>;
   }
 
-  const { statistics, categoryDistribution, resolutionPercentage, averageRating } = dashboardData;
+  const statistics = dashboardData?.statistics || {
+  total: 0,
+  resolved: 0,
+  submitted: 0,
+  assigned: 0,
+  inProgress: 0,
+  escalated: 0
+};
+
+const categoryDistribution = dashboardData?.categoryDistribution || {};
+const resolutionPercentage = dashboardData?.resolutionPercentage || 0;
+const averageRating = dashboardData?.averageRating || 0;
 
   const categoryData = {
     labels: Object.keys(categoryDistribution),

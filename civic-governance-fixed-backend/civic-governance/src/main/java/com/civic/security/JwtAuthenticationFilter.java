@@ -30,58 +30,66 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain)
             throws ServletException, IOException {
 
-        // ===================== IMPORTANT FIX =====================
-        // Skip authentication for public endpoints
-        String path = request.getServletPath();
+        try {
+            String path = request.getRequestURI();
 
-        if (path.startsWith("/api/auth")
-                || path.startsWith("/auth")
-                || path.startsWith("/actuator")) {
+            // ✅ skip public endpoints
+            if (isPublicEndpoint(path)) {
+                chain.doFilter(request, response);
+                return;
+            }
+
+            String header = request.getHeader("Authorization");
+
+            String username = null;
+            String token = null;
+
+            if (header != null && header.startsWith("Bearer ")) {
+                token = header.substring(7);
+
+                try {
+                    username = jwtUtil.extractUsername(token);
+                } catch (Exception e) {
+                    // invalid token → continue without crashing
+                    chain.doFilter(request, response);
+                    return;
+                }
+            }
+
+            if (username != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                UserDetails userDetails =
+                        userDetailsService.loadUserByUsername(username);
+
+                if (jwtUtil.validateToken(token, userDetails.getUsername())) {
+
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+
+                    auth.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
 
             chain.doFilter(request, response);
-            return;
+
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         }
-        // =========================================================
+    }
 
-        final String authorizationHeader = request.getHeader("Authorization");
-
-        String username = null;
-        String jwt = null;
-
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
-
-            try {
-                username = jwtUtil.extractUsername(jwt);
-            } catch (Exception e) {
-                logger.error("JWT Token extraction failed", e);
-            }
-        }
-
-        if (username != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails =
-                    this.userDetailsService.loadUserByUsername(username);
-
-            if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
-
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-
-                authenticationToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authenticationToken);
-            }
-        }
-
-        chain.doFilter(request, response);
+    private boolean isPublicEndpoint(String path) {
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/auth/")
+                || path.startsWith("/api/public/")
+                || path.startsWith("/actuator/");
     }
 }
